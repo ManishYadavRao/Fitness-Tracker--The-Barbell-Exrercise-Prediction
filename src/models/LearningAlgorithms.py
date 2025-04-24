@@ -390,13 +390,14 @@ class ClassificationAlgorithms:
         frame_prob_training_y = pd.DataFrame(pred_prob_training_y, columns=nb.classes_)
         frame_prob_test_y = pd.DataFrame(pred_prob_test_y, columns=nb.classes_)
 
-        return pred_training_y, pred_test_y, frame_prob_training_y, frame_prob_test_y
+        return nb, pred_training_y, pred_test_y, frame_prob_training_y, frame_prob_test_y
 
     # Apply a random forest approach for classification upon the training data (with the specified value for
     # the minimum samples in the leaf, the number of trees, and if we should print some of the details of the
     # model print_model_details=True) and use the created model to predict the outcome for both the
     # test and training set. It returns the categorical predictions for the training and test set as well as the
     # probabilities associated with each class, each class being represented as a column in the data frame.
+    
     def random_forest(
         self,
         train_X,
@@ -420,22 +421,14 @@ class ClassificationAlgorithms:
             rf = GridSearchCV(
                 RandomForestClassifier(), tuned_parameters, cv=5, scoring="accuracy"
             )
+            rf.fit(train_X, train_y.values.ravel())
         else:
             rf = RandomForestClassifier(
                 n_estimators=n_estimators,
                 min_samples_leaf=min_samples_leaf,
                 criterion=criterion,
             )
-
-        # Fit the model
-
-        rf.fit(train_X, train_y.values.ravel())
-
-        if gridsearch and print_model_details:
-            print(rf.best_params_)
-
-        if gridsearch:
-            rf = rf.best_estimator_
+            rf.fit(train_X, train_y.values.ravel())
 
         pred_prob_training_y = rf.predict_proba(train_X)
         pred_prob_test_y = rf.predict_proba(test_X)
@@ -461,9 +454,11 @@ class ClassificationAlgorithms:
                 )
                 print(rf.feature_importances_[ordered_indices[i]])
 
+        # Return the model 'rf' along with other values
         return (
+            rf,
             pred_training_y,
             pred_test_y,
             frame_prob_training_y,
-            frame_prob_test_y,
+            frame_prob_test_y,            
         )
